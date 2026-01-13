@@ -55,13 +55,18 @@ export async function POST(req: Request) {
     const amount = PACKAGE_PRICES[credits];
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     
-    if (!process.env.MOYASAR_SECRET_KEY) {
-      console.error("MOYASAR_SECRET_KEY is not set");
+    const secretKey = process.env.MOYASAR_SECRET_KEY?.trim();
+    
+    if (!secretKey) {
+      console.error("MOYASAR_SECRET_KEY is not set or empty");
       return NextResponse.json(
         { error: "إعدادات الدفع غير مكتملة. يرجى التواصل مع الدعم." },
         { status: 500 }
       );
     }
+
+    console.log("Secret key length:", secretKey.length);
+    console.log("Secret key starts with:", secretKey.substring(0, 10));
     
     const invoiceData = {
       amount: amount,
@@ -76,13 +81,14 @@ export async function POST(req: Request) {
       },
     };
 
+    const authHeader = `Basic ${Buffer.from(secretKey + ":").toString("base64")}`;
+    console.log("Auth header length:", authHeader.length);
+
     const moyasarResponse = await fetch("https://api.moyasar.com/v1/invoices", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${Buffer.from(
-          process.env.MOYASAR_SECRET_KEY + ":"
-        ).toString("base64")}`,
+        Authorization: authHeader,
       },
       body: JSON.stringify(invoiceData),
     });
