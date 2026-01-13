@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 const PACKAGE_PRICES: Record<number, number> = {
-  10: 9900,
+  10: 8900,
   50: 28900,
   100: 39900,
 };
