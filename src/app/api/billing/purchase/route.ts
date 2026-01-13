@@ -55,6 +55,14 @@ export async function POST(req: Request) {
     const amount = PACKAGE_PRICES[credits];
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     
+    if (!process.env.MOYASAR_SECRET_KEY) {
+      console.error("MOYASAR_SECRET_KEY is not set");
+      return NextResponse.json(
+        { error: "إعدادات الدفع غير مكتملة. يرجى التواصل مع الدعم." },
+        { status: 500 }
+      );
+    }
+    
     const paymentData = {
       amount: amount,
       currency: "SAR",
@@ -83,7 +91,11 @@ export async function POST(req: Request) {
 
     if (!moyasarResponse.ok) {
       const errorData = await moyasarResponse.json();
-      console.error("Moyasar API error:", errorData);
+      console.error("Moyasar API error:", {
+        status: moyasarResponse.status,
+        statusText: moyasarResponse.statusText,
+        error: errorData,
+      });
       return NextResponse.json(
         { error: "فشل إنشاء جلسة الدفع، حاول مرة أخرى." },
         { status: 500 }
