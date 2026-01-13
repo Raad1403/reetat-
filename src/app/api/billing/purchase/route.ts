@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         adCredits: user.adCredits,
-        message: `تم إضافة ${credits} رصيد إعلان إلى حسابك (عملية تجريبية بدون دفع حقيقي).`,
+        message: `تم إضافة ${credits} رصيد إعلان إلى حسابك. يمكنك رؤية الرصيد في لوحة التحكم.`,
       },
       { status: 200 }
     );

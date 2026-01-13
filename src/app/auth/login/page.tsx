@@ -33,6 +33,7 @@ export default function LoginPage() {
         return;
       }
 
+      router.refresh();
       router.push("/dashboard");
     } catch (err) {
       setError("حدث خطأ غير متوقع، حاول مرة أخرى.");

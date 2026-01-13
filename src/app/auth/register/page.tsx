@@ -13,10 +13,12 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     if (!name || !email || !password) {
       setError("الاسم والبريد الإلكتروني وكلمة المرور مطلوبة.");
@@ -52,7 +54,18 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/dashboard");
+      // إذا لم يتم تفعيل التوثيق بالبريد في الخادم، سيرجع الخادم بيانات المستخدم
+      // وعندها نعيد توجيه المستخدم مباشرة إلى لوحة التحكم
+      if (data?.id) {
+        router.push("/dashboard");
+        return;
+      }
+
+      // في حالة وجود نظام توثيق ببريد إلكتروني، نعرض رسالة تؤكد إرسال رابط التفعيل
+      setSuccess(
+        data?.message ||
+          "تم إنشاء الحساب. تم إرسال رابط تفعيل إلى بريدك الإلكتروني، يرجى تفعيل الحساب قبل تسجيل الدخول."
+      );
     } catch (err) {
       setError("حدث خطأ غير متوقع، حاول مرة أخرى.");
     } finally {
@@ -133,10 +146,13 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-l from-amber-400 to-amber-500 text-slate-950 text-sm font-semibold shadow-[0_16px_50px_rgba(251,191,36,0.45)] hover:from-amber-300 hover:to-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب والانتقال للوحة التحكم"}
+              {loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}
             </button>
             {error && (
               <p className="mt-2 text-xs text-red-300 text-center">{error}</p>
+            )}
+            {success && !error && (
+              <p className="mt-2 text-xs text-emerald-300 text-center">{success}</p>
             )}
           </div>
         </form>

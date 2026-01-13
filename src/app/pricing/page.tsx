@@ -68,7 +68,7 @@ export default function PricingPage() {
             <div className="mt-4">
               <PurchasePackageButton
                 credits={10}
-                label="شراء حزمة 10 إعلانات (عملية تجريبية بدون دفع حقيقي)"
+                label="شراء حزمة 10 إعلانات"
                 variant="primary"
               />
             </div>
@@ -115,12 +115,12 @@ export default function PricingPage() {
             <div className="mt-4 space-y-2">
               <PurchasePackageButton
                 credits={50}
-                label="شراء حزمة 50 إعلان (عملية تجريبية بدون دفع حقيقي)"
+                label="شراء حزمة 50 إعلان"
                 variant="outline"
               />
               <PurchasePackageButton
                 credits={100}
-                label="شراء حزمة 100 إعلان (عملية تجريبية بدون دفع حقيقي)"
+                label="شراء حزمة 100 إعلان"
                 variant="outline"
               />
             </div>

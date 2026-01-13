@@ -45,7 +45,7 @@ export function PurchasePackageButton({ credits, label, variant = "primary" }: P
       }
 
       const message: string =
-        data?.message || `تم إضافة ${credits} إعلانًا إلى رصيدك (تجريبيًا). يمكنك رؤية الرصيد في لوحة التحكم.`;
+        data?.message || `تم إضافة ${credits} إعلانًا إلى رصيدك. يمكنك رؤية الرصيد في لوحة التحكم.`;
       setSuccess(message);
     } catch (err) {
       setError("حدث خطأ غير متوقع أثناء تنفيذ العملية، حاول مرة أخرى.");
