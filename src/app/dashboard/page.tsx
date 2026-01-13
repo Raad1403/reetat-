@@ -3,11 +3,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { DeleteProjectButton } from "@/components/delete-project-button";
 import { PaymentNotification } from "@/components/payment-notification";
+import { PaymentVerifier } from "@/components/payment-verifier";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { payment?: string; credits?: string };
+  searchParams: { payment?: string; credits?: string; invoice_id?: string };
 }) {
   const cookieStore = cookies();
   const userId = cookieStore.get("userId")?.value;
@@ -38,6 +39,7 @@ export default async function DashboardPage({
 
   return (
     <main className="min-h-screen px-4 py-10 max-w-5xl mx-auto">
+      <PaymentVerifier />
       <PaymentNotification status={searchParams.payment} credits={searchParams.credits} />
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>

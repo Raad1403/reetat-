@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       currency: "SAR",
       description: `شراء ${credits} رصيد إعلان - ريتات`,
       callback_url: `${baseUrl}/api/billing/callback`,
-      success_url: `${baseUrl}/dashboard?payment=success&credits=${credits}`,
+      success_url: `${baseUrl}/dashboard`,
       metadata: {
         userId: user.id.toString(),
         credits: credits.toString(),
