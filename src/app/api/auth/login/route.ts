@@ -31,16 +31,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!user.emailVerified) {
-      return NextResponse.json(
-        {
-          error:
-            "يجب تفعيل البريد الإلكتروني قبل تسجيل الدخول. يرجى فحص بريدك الإلكتروني.",
-        },
-        { status: 403 }
-      );
-    }
-
     const userData = {
       id: user.id,
       name: user.name,

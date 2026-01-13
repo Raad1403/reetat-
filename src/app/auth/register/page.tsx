@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -14,22 +14,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (redirectCountdown === null) return;
-    
-    if (redirectCountdown === 0) {
-      router.push("/auth/login");
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setRedirectCountdown(redirectCountdown - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [redirectCountdown, router]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -70,19 +54,11 @@ export default function RegisterPage() {
         return;
       }
 
-      // إذا لم يتم تفعيل التوثيق بالبريد في الخادم، سيرجع الخادم بيانات المستخدم
-      // وعندها نعيد توجيه المستخدم مباشرة إلى لوحة التحكم
-      if (data?.id) {
+      setSuccess(data?.message || "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...");
+      
+      setTimeout(() => {
         router.push("/dashboard");
-        return;
-      }
-
-      // في حالة وجود نظام توثيق ببريد إلكتروني، نعرض رسالة تؤكد إرسال رابط التفعيل
-      setSuccess(
-        data?.message ||
-          "تم إنشاء الحساب. تم إرسال رابط تفعيل إلى بريدك الإلكتروني، يرجى تفعيل الحساب قبل تسجيل الدخول."
-      );
-      setRedirectCountdown(5);
+      }, 1500);
     } catch (err) {
       setError("حدث خطأ غير متوقع، حاول مرة أخرى.");
     } finally {
@@ -170,12 +146,7 @@ export default function RegisterPage() {
             )}
             {success && !error && (
               <div className="mt-4 p-4 rounded-xl bg-emerald-900/30 border border-emerald-500/30">
-                <p className="text-sm text-emerald-200 text-center mb-2">{success}</p>
-                {redirectCountdown !== null && (
-                  <p className="text-xs text-emerald-300 text-center">
-                    سيتم توجيهك لصفحة تسجيل الدخول خلال {redirectCountdown} ثانية...
-                  </p>
-                )}
+                <p className="text-sm text-emerald-200 text-center">{success}</p>
               </div>
             )}
           </div>

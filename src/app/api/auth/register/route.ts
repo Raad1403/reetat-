@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
-import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -26,64 +24,40 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const hasEmailVerificationConfig =
-      !!process.env.RESEND_API_KEY && !!process.env.RESEND_FROM_EMAIL;
-
-    if (!hasEmailVerificationConfig) {
-      const user = await prisma.user.create({
-        data: {
-          name,
-          companyName: companyName || null,
-          email,
-          phone: phone || null,
-          passwordHash,
-          emailVerified: true,
-          verificationToken: null,
-          verificationTokenExpiresAt: null,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          subscriptionPlan: true,
-        },
-      });
-
-      const response = NextResponse.json(user, { status: 201 });
-      response.cookies.set("userId", String(user.id), {
-        httpOnly: true,
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30,
-      });
-
-      return response;
-    }
-
-    const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
-
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         companyName: companyName || null,
         email,
         phone: phone || null,
         passwordHash,
-        emailVerified: false,
-        verificationToken: token,
-        verificationTokenExpiresAt: expiresAt,
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiresAt: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        subscriptionPlan: true,
       },
     });
 
-    await sendVerificationEmail(email, token);
-
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
-        message:
-          "تم إنشاء الحساب. تم إرسال رابط تفعيل إلى بريدك الإلكتروني، يرجى تفعيل الحساب قبل تسجيل الدخول.",
+        message: "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...",
+        user,
       },
       { status: 201 }
     );
+    
+    response.cookies.set("userId", String(user.id), {
+      httpOnly: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+
+    return response;
   } catch (error) {
     console.error("Register error", error);
     return NextResponse.json(
