@@ -63,14 +63,12 @@ export async function POST(req: Request) {
       );
     }
     
-    const paymentData = {
+    const invoiceData = {
       amount: amount,
       currency: "SAR",
       description: `شراء ${credits} رصيد إعلان - ريتات`,
       callback_url: `${baseUrl}/api/billing/callback`,
-      source: {
-        type: "creditcard",
-      },
+      success_url: `${baseUrl}/dashboard?payment=success&credits=${credits}`,
       metadata: {
         userId: user.id.toString(),
         credits: credits.toString(),
@@ -78,7 +76,7 @@ export async function POST(req: Request) {
       },
     };
 
-    const moyasarResponse = await fetch("https://api.moyasar.com/v1/payments", {
+    const moyasarResponse = await fetch("https://api.moyasar.com/v1/invoices", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -86,7 +84,7 @@ export async function POST(req: Request) {
           process.env.MOYASAR_SECRET_KEY + ":"
         ).toString("base64")}`,
       },
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(invoiceData),
     });
 
     if (!moyasarResponse.ok) {
@@ -102,12 +100,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const payment = await moyasarResponse.json();
+    const invoice = await moyasarResponse.json();
 
     return NextResponse.json(
       {
-        paymentId: payment.id,
-        checkoutUrl: payment.source.transaction_url,
+        invoiceId: invoice.id,
+        checkoutUrl: invoice.url,
       },
       { status: 200 }
     );
