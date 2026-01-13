@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
+const PACKAGE_PRICES: Record<number, number> = {
+  10: 9900,
+  50: 28900,
+  100: 39900,
+};
+
 export async function POST(req: Request) {
   try {
     const cookieStore = cookies();
@@ -25,8 +31,7 @@ export async function POST(req: Request) {
 
     const credits = Number(body?.credits ?? 0);
 
-    const allowedPackages = [10, 50, 100];
-    if (!allowedPackages.includes(credits)) {
+    if (!PACKAGE_PRICES[credits]) {
       return NextResponse.json(
         {
           error: "حزمة الإعلانات غير معروفة. يرجى اختيار إحدى الحزم الظاهرة في صفحة التسعير.",
@@ -35,22 +40,62 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await prisma.user.update({
+    const user = await prisma.user.findUnique({
       where: { id: Number(userId) },
-      data: {
-        adCredits: {
-          increment: credits,
-        },
-      },
-      select: {
-        adCredits: true,
-      },
+      select: { id: true, email: true, name: true },
     });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "المستخدم غير موجود." },
+        { status: 404 }
+      );
+    }
+
+    const amount = PACKAGE_PRICES[credits];
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    
+    const paymentData = {
+      amount: amount,
+      currency: "SAR",
+      description: `شراء ${credits} رصيد إعلان - ريتات`,
+      callback_url: `${baseUrl}/api/billing/callback`,
+      source: {
+        type: "creditcard",
+      },
+      metadata: {
+        userId: user.id.toString(),
+        credits: credits.toString(),
+        email: user.email,
+      },
+    };
+
+    const moyasarResponse = await fetch("https://api.moyasar.com/v1/payments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${Buffer.from(
+          process.env.MOYASAR_SECRET_KEY + ":"
+        ).toString("base64")}`,
+      },
+      body: JSON.stringify(paymentData),
+    });
+
+    if (!moyasarResponse.ok) {
+      const errorData = await moyasarResponse.json();
+      console.error("Moyasar API error:", errorData);
+      return NextResponse.json(
+        { error: "فشل إنشاء جلسة الدفع، حاول مرة أخرى." },
+        { status: 500 }
+      );
+    }
+
+    const payment = await moyasarResponse.json();
 
     return NextResponse.json(
       {
-        adCredits: user.adCredits,
-        message: `تم إضافة ${credits} رصيد إعلان إلى حسابك. يمكنك رؤية الرصيد في لوحة التحكم.`,
+        paymentId: payment.id,
+        checkoutUrl: payment.source.transaction_url,
       },
       { status: 200 }
     );

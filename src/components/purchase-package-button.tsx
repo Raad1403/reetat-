@@ -36,20 +36,24 @@ export function PurchasePackageButton({ credits, label, variant = "primary" }: P
 
       if (res.status === 401) {
         setError(data?.error || "يجب تسجيل الدخول أولاً قبل شراء رصيد إعلانات.");
+        setLoading(false);
         return;
       }
 
       if (!res.ok) {
-        setError(data?.error || "تعذّر إتمام عملية الشراء التجريبية، حاول مرة أخرى.");
+        setError(data?.error || "تعذّر إنشاء جلسة الدفع، حاول مرة أخرى.");
+        setLoading(false);
         return;
       }
 
-      const message: string =
-        data?.message || `تم إضافة ${credits} إعلانًا إلى رصيدك. يمكنك رؤية الرصيد في لوحة التحكم.`;
-      setSuccess(message);
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        setError("فشل الحصول على رابط الدفع، حاول مرة أخرى.");
+        setLoading(false);
+      }
     } catch (err) {
       setError("حدث خطأ غير متوقع أثناء تنفيذ العملية، حاول مرة أخرى.");
-    } finally {
       setLoading(false);
     }
   }

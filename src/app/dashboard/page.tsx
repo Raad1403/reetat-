@@ -2,8 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { DeleteProjectButton } from "@/components/delete-project-button";
+import { PaymentNotification } from "@/components/payment-notification";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { payment?: string; credits?: string };
+}) {
   const cookieStore = cookies();
   const userId = cookieStore.get("userId")?.value;
 
@@ -33,6 +38,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen px-4 py-10 max-w-5xl mx-auto">
+      <PaymentNotification status={searchParams.payment} credits={searchParams.credits} />
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold mb-1 text-slate-50">لوحة تحكم المطوّر</h1>
