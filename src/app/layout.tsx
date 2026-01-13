@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import React from "react";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { LogoutButton } from "@/components/logout-button";
 import "./globals.css";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "ريتات – ذكاء تسويقي لمشاريعك العقارية",
@@ -18,10 +15,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
-  const userId = cookieStore.get("userId")?.value;
-  const isLoggedIn = Boolean(userId);
-
   return (
     <html lang="ar" dir="rtl">
       <body className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50 antialiased">
@@ -54,25 +47,13 @@ export default function RootLayout({
                 >
                   الباقات والأسعار
                 </Link>
-                {isLoggedIn && (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      className="rounded-full px-3 py-1 hover:bg-slate-900/70 transition-colors"
-                    >
-                      لوحة التحكم
-                    </Link>
-                    <LogoutButton />
-                  </>
-                )}
-                {!isLoggedIn && (
-                  <Link
-                    href="/auth/login"
-                    className="rounded-full border border-slate-600/80 bg-slate-950/40 px-3 py-1 text-amber-200 hover:border-amber-400/80 hover:text-amber-100 transition-colors"
-                  >
-                    دخول المطوّرين
-                  </Link>
-                )}
+                <Link
+                  href="/dashboard"
+                  className="rounded-full px-3 py-1 hover:bg-slate-900/70 transition-colors"
+                >
+                  لوحة التحكم
+                </Link>
+                <LogoutButton />
               </nav>
             </div>
           </header>
