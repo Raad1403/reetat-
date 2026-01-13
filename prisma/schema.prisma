@@ -3,25 +3,28 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                 Int       @id @default(autoincrement())
-  name               String
-  companyName        String?   // اسم الشركة (اختياري)
-  email              String    @unique
-  phone              String?
-  passwordHash       String
-  subscriptionPlan   String   @default("FREE")
-  subscriptionEndAt  DateTime? // نهاية الاشتراك المدفوع إن وجدت
-  adCredits          Int      @default(0)
-  usedTrialAds       Int      @default(0)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                          Int       @id @default(autoincrement())
+  name                        String
+  companyName                 String?   // اسم الشركة (اختياري)
+  email                       String    @unique
+  phone                       String?
+  passwordHash                String
+  subscriptionPlan            String   @default("FREE")
+  subscriptionEndAt           DateTime? // نهاية الاشتراك المدفوع إن وجدت
+  adCredits                   Int      @default(0)
+  usedTrialAds                Int      @default(0)
+  emailVerified               Boolean  @default(true)
+  verificationToken           String?  @unique
+  verificationTokenExpiresAt  DateTime?
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
 
-  projects           Project[]
+  projects                    Project[]
 }
 
 model Project {
