@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -14,6 +14,22 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (redirectCountdown === null) return;
+    
+    if (redirectCountdown === 0) {
+      router.push("/auth/login");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setRedirectCountdown(redirectCountdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [redirectCountdown, router]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -66,6 +82,7 @@ export default function RegisterPage() {
         data?.message ||
           "تم إنشاء الحساب. تم إرسال رابط تفعيل إلى بريدك الإلكتروني، يرجى تفعيل الحساب قبل تسجيل الدخول."
       );
+      setRedirectCountdown(5);
     } catch (err) {
       setError("حدث خطأ غير متوقع، حاول مرة أخرى.");
     } finally {
@@ -152,7 +169,14 @@ export default function RegisterPage() {
               <p className="mt-2 text-xs text-red-300 text-center">{error}</p>
             )}
             {success && !error && (
-              <p className="mt-2 text-xs text-emerald-300 text-center">{success}</p>
+              <div className="mt-4 p-4 rounded-xl bg-emerald-900/30 border border-emerald-500/30">
+                <p className="text-sm text-emerald-200 text-center mb-2">{success}</p>
+                {redirectCountdown !== null && (
+                  <p className="text-xs text-emerald-300 text-center">
+                    سيتم توجيهك لصفحة تسجيل الدخول خلال {redirectCountdown} ثانية...
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </form>
