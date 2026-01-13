@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { LogoutButton } from "@/components/logout-button";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "ريتات – ذكاء تسويقي لمشاريعك العقارية",
   description:
