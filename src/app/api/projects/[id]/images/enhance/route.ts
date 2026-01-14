@@ -155,6 +155,20 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       console.error("Persist enhanced project image error", persistError);
     }
 
+    // خصم الرصيد بعد نجاح العملية
+    const useTrial = user.usedTrialAds < MAX_FREE_TRIAL_ADS;
+    if (useTrial) {
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { usedTrialAds: { increment: 1 } },
+      });
+    } else {
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { adCredits: { decrement: 1 } },
+      });
+    }
+
     return NextResponse.json({ imageBase64 }, { status: 200 });
   } catch (error) {
     console.error("Enhance project image error", error);
