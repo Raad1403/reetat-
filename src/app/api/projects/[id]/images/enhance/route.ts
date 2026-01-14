@@ -79,6 +79,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     const incomingForm = await req.formData();
     const file = incomingForm.get("image");
+    const customPrompt = incomingForm.get("prompt");
 
     if (!file || !(file instanceof File)) {
       return NextResponse.json(
@@ -93,13 +94,15 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const arrayBuffer = await file.arrayBuffer();
     const blob = new Blob([arrayBuffer], { type: mimeType });
 
+    const defaultPrompt = "حسّن جودة هذه الصورة لمشروع تطوير عقاري: وضوح أعلى، إضاءة أفضل، ألوان متوازنة تناسب الإعلانات الرقمية والبروشورات.";
+    const finalPrompt = customPrompt && typeof customPrompt === "string" && customPrompt.trim()
+      ? customPrompt.trim()
+      : defaultPrompt;
+
     const formData = new FormData();
     formData.append("image", blob, fileName);
     formData.append("model", "gpt-image-1");
-    formData.append(
-      "prompt",
-      "حسّن جودة هذه الصورة لمشروع تطوير عقاري: وضوح أعلى، إضاءة أفضل، ألوان متوازنة تناسب الإعلانات الرقمية والبروشورات."
-    );
+    formData.append("prompt", finalPrompt);
     formData.append("size", "1024x1024");
     formData.append("n", "1");
 

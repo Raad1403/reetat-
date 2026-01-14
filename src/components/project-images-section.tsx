@@ -15,6 +15,7 @@ export function ProjectImagesSection({ projectId, initialImages = [] }: ProjectI
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
+  const [enhancePrompt, setEnhancePrompt] = useState("");
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -39,6 +40,9 @@ export function ProjectImagesSection({ projectId, initialImages = [] }: ProjectI
     try {
       const formData = new FormData();
       formData.append("image", selectedFile);
+      if (enhancePrompt.trim()) {
+        formData.append("prompt", enhancePrompt.trim());
+      }
 
       const response = await fetch(`/api/projects/${projectId}/images/enhance`, {
         method: "POST",
@@ -136,6 +140,19 @@ export function ProjectImagesSection({ projectId, initialImages = [] }: ProjectI
               </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            <label className="block text-xs text-slate-300">
+              وصف التحسين المطلوب (اختياري):
+            </label>
+            <textarea
+              value={enhancePrompt}
+              onChange={(e) => setEnhancePrompt(e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400/70"
+              placeholder="مثال: أضف أشجار حول المبنى، أو حسّن الإضاءة وزد الوضوح، أو أضف سماء زرقاء صافية..."
+            />
+          </div>
 
           <button
             type="button"
