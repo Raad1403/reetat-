@@ -51,16 +51,20 @@ export default async function DashboardPage({
             رصيد الإعلانات المتاح:
             <span className="font-semibold text-amber-300 mr-1">{user.adCredits}</span>
             إعلان.
-            {" "}
-            التجربة المجانية المستخدمة:
-            <span className="font-semibold text-emerald-300 mr-1">
-              {user.usedTrialAds}
-            </span>
-            /{MAX_FREE_TRIAL_ADS}.
-            {remainingTrialAds > 0 && (
-              <span className="mr-1 text-emerald-300">
-                {`متبقٍ لك ${remainingTrialAds} إعلان تجريبي مجاني.`}
-              </span>
+            {user.adCredits === 0 && (
+              <>
+                {" "}
+                التجربة المجانية المستخدمة:
+                <span className="font-semibold text-emerald-300 mr-1">
+                  {user.usedTrialAds}
+                </span>
+                /{MAX_FREE_TRIAL_ADS}.
+                {remainingTrialAds > 0 && (
+                  <span className="mr-1 text-emerald-300">
+                    {`متبقٍ لك ${remainingTrialAds} إعلان تجريبي مجاني.`}
+                  </span>
+                )}
+              </>
             )}
           </p>
         </div>
