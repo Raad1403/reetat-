@@ -54,10 +54,14 @@ export default function RegisterPage() {
         return;
       }
 
-      setSuccess(data?.message || "تم إنشاء الحساب بنجاح! جاري تحويلك لصفحة التحقق...");
+      setSuccess(data?.message || "تم إنشاء الحساب بنجاح!");
       
       setTimeout(() => {
-        router.push(`/auth/verify-otp?email=${encodeURIComponent(data.email)}`);
+        if (data.requiresOTP) {
+          router.push(`/auth/verify-otp?email=${encodeURIComponent(data.email)}`);
+        } else {
+          router.push("/dashboard");
+        }
       }, 1500);
     } catch (err) {
       setError("حدث خطأ غير متوقع، حاول مرة أخرى.");
