@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { sendOTPEmail } from "@/lib/email-otp";
 
 export async function POST(req: Request) {
   try {
@@ -24,6 +25,10 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // توليد رمز OTP مكون من 4 أرقام
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 دقائق
+
     const user = await prisma.user.create({
       data: {
         name,
@@ -31,33 +36,38 @@ export async function POST(req: Request) {
         email,
         phone: phone || null,
         passwordHash,
-        emailVerified: true,
-        verificationToken: null,
-        verificationTokenExpiresAt: null,
+        emailVerified: false,
+        otpCode,
+        otpExpiresAt,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        subscriptionPlan: true,
       },
     });
 
-    const response = NextResponse.json(
+    // إرسال رمز OTP عبر البريد الإلكتروني
+    try {
+      await sendOTPEmail(email, otpCode);
+    } catch (emailError) {
+      console.error("Failed to send OTP email:", emailError);
+      // حذف المستخدم إذا فشل إرسال البريد
+      await prisma.user.delete({ where: { id: user.id } });
+      return NextResponse.json(
+        { error: "فشل إرسال رمز التحقق. يرجى التحقق من بريدك الإلكتروني والمحاولة مرة أخرى." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
       {
-        message: "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...",
-        user,
+        message: "تم إنشاء الحساب بنجاح! تم إرسال رمز التحقق إلى بريدك الإلكتروني.",
+        userId: user.id,
+        email: user.email,
       },
       { status: 201 }
     );
-    
-    response.cookies.set("userId", String(user.id), {
-      httpOnly: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
-    return response;
   } catch (error) {
     console.error("Register error", error);
     return NextResponse.json(
