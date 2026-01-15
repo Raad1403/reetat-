@@ -57,7 +57,11 @@ export default function RegisterPage() {
       setSuccess(data?.message || "تم إنشاء الحساب بنجاح!");
       
       setTimeout(() => {
-        router.push("/dashboard");
+        if (data.requiresOTP) {
+          router.push(`/auth/verify-otp?email=${encodeURIComponent(data.email)}`);
+        } else {
+          router.push("/dashboard");
+        }
       }, 1500);
     } catch (err) {
       setError("حدث خطأ غير متوقع، حاول مرة أخرى.");
