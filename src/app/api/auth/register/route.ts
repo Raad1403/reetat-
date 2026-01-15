@@ -82,20 +82,26 @@ export async function POST(req: Request) {
       return response;
     } catch (createError: any) {
       console.error("Prisma create user error:", createError);
+      console.error("Error code:", createError.code);
+      console.error("Error meta:", createError.meta);
       return NextResponse.json(
         {
           error: "حدث خطأ أثناء إنشاء الحساب في قاعدة البيانات.",
-          details: process.env.NODE_ENV === "development" ? createError.message : undefined,
+          errorMessage: createError.message,
+          errorCode: createError.code,
+          errorMeta: createError.meta,
         },
         { status: 500 }
       );
     }
   } catch (error: any) {
     console.error("Register error:", error);
+    console.error("Error stack:", error.stack);
     return NextResponse.json(
       {
         error: "حدث خطأ أثناء إنشاء الحساب، حاول مرة أخرى.",
-        details: process.env.NODE_ENV === "development" ? error.message : undefined,
+        errorMessage: error.message,
+        errorStack: error.stack?.substring(0, 200),
       },
       { status: 500 }
     );
