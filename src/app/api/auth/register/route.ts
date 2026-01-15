@@ -25,21 +25,43 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     try {
-      const user = await prisma.user.create({
-        data: {
-          name,
-          companyName: companyName || null,
-          email,
-          phone: phone || null,
-          passwordHash,
-          emailVerified: true,
-        },
+      // استخدام raw SQL للتوافق مع schema القديم والجديد
+      const result = await prisma.$executeRaw`
+        INSERT INTO "User" (
+          name, 
+          "companyName", 
+          email, 
+          phone, 
+          "passwordHash", 
+          "emailVerified",
+          "createdAt",
+          "updatedAt"
+        ) VALUES (
+          ${name},
+          ${companyName || null},
+          ${email},
+          ${phone || null},
+          ${passwordHash},
+          true,
+          NOW(),
+          NOW()
+        )
+        RETURNING id
+      `;
+
+      // جلب المستخدم المُنشأ
+      const user = await prisma.user.findUnique({
+        where: { email },
         select: {
           id: true,
           name: true,
           email: true,
         },
       });
+
+      if (!user) {
+        throw new Error("Failed to retrieve created user");
+      }
 
       const response = NextResponse.json(
         {
