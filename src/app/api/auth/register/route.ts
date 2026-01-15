@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { generateOTP, sendOTPEmail } from "@/lib/email-otp";
 
 export async function POST(req: Request) {
   try {
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const otpCode = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 دقائق
 
     const user = await prisma.user.create({
       data: {
@@ -31,6 +34,9 @@ export async function POST(req: Request) {
         email,
         phone: phone || null,
         passwordHash,
+        emailVerified: false,
+        otpCode,
+        otpExpiresAt,
       },
       select: {
         id: true,
@@ -39,22 +45,26 @@ export async function POST(req: Request) {
       },
     });
 
-    const response = NextResponse.json(
+    try {
+      await sendOTPEmail(email, otpCode);
+    } catch (emailError) {
+      console.error("Failed to send OTP email:", emailError);
+      await prisma.user.delete({ where: { id: user.id } });
+      return NextResponse.json(
+        { error: "فشل إرسال رمز التحقق. يرجى التحقق من البريد الإلكتروني والمحاولة مرة أخرى." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
       {
-        message: "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...",
+        message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.",
         userId: user.id,
         email: user.email,
+        requiresOTP: true,
       },
       { status: 201 }
     );
-
-    response.cookies.set("userId", String(user.id), {
-      httpOnly: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
-    return response;
   } catch (error: any) {
     console.error("Register error:", error);
     return NextResponse.json(
