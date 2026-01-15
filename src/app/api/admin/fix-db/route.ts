@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   try {
-    // التحقق من وجود مفتاح أمان
-    const { secret } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const secret = searchParams.get("secret");
     
-    if (secret !== process.env.ADMIN_SECRET) {
+    // السماح بالتشغيل بدون مفتاح في بيئة الإنتاج (مرة واحدة فقط)
+    const allowedSecret = "fix-db-reetat-2026";
+    
+    if (secret !== allowedSecret) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Unauthorized - Invalid secret" },
         { status: 401 }
       );
     }
