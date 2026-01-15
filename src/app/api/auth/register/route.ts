@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { generateOTP, sendOTPEmail } from "@/lib/email-otp";
 
 export async function POST(req: Request) {
   try {
@@ -24,21 +23,6 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    
-    // التحقق من وجود Gmail credentials
-    const hasEmailConfig = process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD;
-    
-    let otpCode: string | null = null;
-    let otpExpiresAt: Date | null = null;
-    let emailVerified = true; // افتراضياً مفعّل
-    let requiresOTP = false;
-
-    if (hasEmailConfig) {
-      otpCode = generateOTP();
-      otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-      emailVerified = false;
-      requiresOTP = true;
-    }
 
     const user = await prisma.user.create({
       data: {
@@ -47,9 +31,6 @@ export async function POST(req: Request) {
         email,
         phone: phone || null,
         passwordHash,
-        emailVerified,
-        otpCode,
-        otpExpiresAt,
       },
       select: {
         id: true,
@@ -58,43 +39,11 @@ export async function POST(req: Request) {
       },
     });
 
-    if (hasEmailConfig && otpCode) {
-      try {
-        await sendOTPEmail(email, otpCode);
-      } catch (emailError) {
-        console.error("Failed to send OTP email:", emailError);
-        // لا نحذف المستخدم، بل نفعّل حسابه مباشرة
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            emailVerified: true,
-            otpCode: null,
-            otpExpiresAt: null,
-          },
-        });
-        requiresOTP = false;
-      }
-    }
-
-    if (requiresOTP) {
-      return NextResponse.json(
-        {
-          message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.",
-          userId: user.id,
-          email: user.email,
-          requiresOTP: true,
-        },
-        { status: 201 }
-      );
-    }
-
-    // إذا لم يكن هناك OTP، نسجّل دخول المستخدم مباشرة
     const response = NextResponse.json(
       {
         message: "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...",
         userId: user.id,
         email: user.email,
-        requiresOTP: false,
       },
       { status: 201 }
     );
