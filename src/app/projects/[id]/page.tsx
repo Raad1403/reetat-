@@ -6,6 +6,9 @@ import { ProjectImagesSection } from "@/components/project-images-section";
 import { ProjectLogoSection } from "@/components/project-logo-section";
 import { ShareProjectButton } from "@/components/share-project-button";
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
 interface ProjectPageProps {
   params: {
     id: string;
