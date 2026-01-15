@@ -25,42 +25,71 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     try {
-      // استخدام raw SQL للتوافق مع schema القديم والجديد
-      const result = await prisma.$executeRaw`
-        INSERT INTO "User" (
-          name, 
-          "companyName", 
-          email, 
-          phone, 
-          "passwordHash", 
-          "emailVerified",
-          "createdAt",
-          "updatedAt"
-        ) VALUES (
-          ${name},
-          ${companyName || null},
-          ${email},
-          ${phone || null},
-          ${passwordHash},
-          true,
-          NOW(),
-          NOW()
-        )
-        RETURNING id
-      `;
+      // محاولة إنشاء المستخدم باستخدام Prisma مع تجاهل الأخطاء المتعلقة بالحقول الإضافية
+      let user;
+      
+      try {
+        // محاولة 1: استخدام Prisma ORM العادي
+        user = await prisma.user.create({
+          data: {
+            name,
+            companyName: companyName || null,
+            email,
+            phone: phone || null,
+            passwordHash,
+            emailVerified: true,
+          } as any, // استخدام any لتجاوز مشاكل TypeScript
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        });
+      } catch (prismaError: any) {
+        // إذا فشل Prisma، استخدم raw SQL
+        console.log("Prisma create failed, trying raw SQL:", prismaError.message);
+        
+        await prisma.$executeRaw`
+          INSERT INTO "User" (
+            name, 
+            "companyName", 
+            email, 
+            phone, 
+            "passwordHash", 
+            "emailVerified",
+            "subscriptionPlan",
+            "adCredits",
+            "usedTrialAds",
+            "createdAt",
+            "updatedAt"
+          ) VALUES (
+            ${name},
+            ${companyName || null},
+            ${email},
+            ${phone || null},
+            ${passwordHash},
+            true,
+            'FREE',
+            0,
+            0,
+            NOW(),
+            NOW()
+          )
+        `;
 
-      // جلب المستخدم المُنشأ
-      const user = await prisma.user.findUnique({
-        where: { email },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      });
+        // جلب المستخدم المُنشأ
+        user = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        });
 
-      if (!user) {
-        throw new Error("Failed to retrieve created user");
+        if (!user) {
+          throw new Error("Failed to retrieve created user after raw SQL insert");
+        }
       }
 
       const response = NextResponse.json(
