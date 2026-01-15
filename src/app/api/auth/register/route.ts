@@ -24,8 +24,21 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const otpCode = generateOTP();
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 دقائق
+    
+    // التحقق من وجود Gmail credentials
+    const hasEmailConfig = process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD;
+    
+    let otpCode: string | null = null;
+    let otpExpiresAt: Date | null = null;
+    let emailVerified = true; // افتراضياً مفعّل
+    let requiresOTP = false;
+
+    if (hasEmailConfig) {
+      otpCode = generateOTP();
+      otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      emailVerified = false;
+      requiresOTP = true;
+    }
 
     const user = await prisma.user.create({
       data: {
@@ -34,7 +47,7 @@ export async function POST(req: Request) {
         email,
         phone: phone || null,
         passwordHash,
-        emailVerified: false,
+        emailVerified,
         otpCode,
         otpExpiresAt,
       },
@@ -45,26 +58,54 @@ export async function POST(req: Request) {
       },
     });
 
-    try {
-      await sendOTPEmail(email, otpCode);
-    } catch (emailError) {
-      console.error("Failed to send OTP email:", emailError);
-      await prisma.user.delete({ where: { id: user.id } });
+    if (hasEmailConfig && otpCode) {
+      try {
+        await sendOTPEmail(email, otpCode);
+      } catch (emailError) {
+        console.error("Failed to send OTP email:", emailError);
+        // لا نحذف المستخدم، بل نفعّل حسابه مباشرة
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerified: true,
+            otpCode: null,
+            otpExpiresAt: null,
+          },
+        });
+        requiresOTP = false;
+      }
+    }
+
+    if (requiresOTP) {
       return NextResponse.json(
-        { error: "فشل إرسال رمز التحقق. يرجى التحقق من البريد الإلكتروني والمحاولة مرة أخرى." },
-        { status: 500 }
+        {
+          message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.",
+          userId: user.id,
+          email: user.email,
+          requiresOTP: true,
+        },
+        { status: 201 }
       );
     }
 
-    return NextResponse.json(
+    // إذا لم يكن هناك OTP، نسجّل دخول المستخدم مباشرة
+    const response = NextResponse.json(
       {
-        message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.",
+        message: "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...",
         userId: user.id,
         email: user.email,
-        requiresOTP: true,
+        requiresOTP: false,
       },
       { status: 201 }
     );
+
+    response.cookies.set("userId", String(user.id), {
+      httpOnly: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+
+    return response;
   } catch (error: any) {
     console.error("Register error:", error);
     return NextResponse.json(
