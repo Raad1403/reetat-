@@ -24,43 +24,57 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        companyName: companyName || null,
-        email,
-        phone: phone || null,
-        passwordHash,
-        emailVerified: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
+    try {
+      const user = await prisma.user.create({
+        data: {
+          name,
+          companyName: companyName || null,
+          email,
+          phone: phone || null,
+          passwordHash,
+          emailVerified: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
 
-    const response = NextResponse.json(
-      {
-        message: "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...",
-        userId: user.id,
-        email: user.email,
-        requiresOTP: false,
-      },
-      { status: 201 }
-    );
+      const response = NextResponse.json(
+        {
+          message: "تم إنشاء الحساب بنجاح! جاري تحويلك إلى لوحة التحكم...",
+          userId: user.id,
+          email: user.email,
+          requiresOTP: false,
+        },
+        { status: 201 }
+      );
 
-    response.cookies.set("userId", String(user.id), {
-      httpOnly: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
+      response.cookies.set("userId", String(user.id), {
+        httpOnly: true,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
 
-    return response;
-  } catch (error) {
-    console.error("Register error", error);
+      return response;
+    } catch (createError: any) {
+      console.error("Prisma create user error:", createError);
+      return NextResponse.json(
+        {
+          error: "حدث خطأ أثناء إنشاء الحساب في قاعدة البيانات.",
+          details: process.env.NODE_ENV === "development" ? createError.message : undefined,
+        },
+        { status: 500 }
+      );
+    }
+  } catch (error: any) {
+    console.error("Register error:", error);
     return NextResponse.json(
-      { error: "حدث خطأ أثناء إنشاء الحساب، حاول مرة أخرى." },
+      {
+        error: "حدث خطأ أثناء إنشاء الحساب، حاول مرة أخرى.",
+        details: process.env.NODE_ENV === "development" ? error.message : undefined,
+      },
       { status: 500 }
     );
   }
