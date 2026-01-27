@@ -37,32 +37,10 @@ export default async function DashboardPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const totalUsers = await prisma.user.count();
-  const verifiedUsers = await prisma.user.count({
-    where: { emailVerified: true }
-  });
-  const totalProjects = await prisma.project.count();
-
   return (
     <main className="min-h-screen px-4 py-10 max-w-5xl mx-auto">
       <PaymentVerifier />
       <PaymentNotification status={searchParams.payment} credits={searchParams.credits} />
-      
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="rounded-xl border border-slate-700/70 bg-slate-900/40 backdrop-blur-xl p-4 text-center">
-          <p className="text-xs text-slate-400 mb-1">إجمالي المستخدمين</p>
-          <p className="text-3xl font-bold text-amber-400">{totalUsers}</p>
-        </div>
-        <div className="rounded-xl border border-slate-700/70 bg-slate-900/40 backdrop-blur-xl p-4 text-center">
-          <p className="text-xs text-slate-400 mb-1">المستخدمين المفعّلين (OTP)</p>
-          <p className="text-3xl font-bold text-emerald-400">{verifiedUsers}</p>
-        </div>
-        <div className="rounded-xl border border-slate-700/70 bg-slate-900/40 backdrop-blur-xl p-4 text-center">
-          <p className="text-xs text-slate-400 mb-1">إجمالي المشاريع</p>
-          <p className="text-3xl font-bold text-blue-400">{totalProjects}</p>
-        </div>
-      </section>
-
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold mb-1 text-slate-50">لوحة تحكم المطوّر</h1>
